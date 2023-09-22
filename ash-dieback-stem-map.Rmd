@@ -11,42 +11,52 @@ output:
   urlcolor: blue
 ---
 
+
 ```{r setup, echo=FALSE, message=FALSE,warning=FALSE, error=FALSE}
+library(lidR)
+library(mapview)
+library(rgl)
+library(pandocfilters)
+library(rmarkdown)
+library(formatR)
+library(gitignore)
+library(tinytex)
+library(knitr)
+library(raster)
+library(webdriver)
+library(webshot)
 library(sf)
 library(sp)
 library(terra)
-library(raster)
-library(dplyr)
-library(caret)
-library(caretEnsemble)
-library(ForestTools)
-library(lidR)
-library(randomForest)
-library(e1071)
-library(rgdal)
-library(rgeos)
-library(Rcpp)
-library(rmarkdown)
-library(knitr)
-library(MASS)
-library(car)
+library(conflicted)
 library(RColorBrewer)
-#devtools::install_github(("gearslaboratory/gdalUtils"))
-library(gdalUtils)
-#library(gdalUtilities)
+library(tmap)
+library(tmaptools)
 #webshot::install_phantomjs(force = TRUE)
-#knit_hooks$set(webgl = hook_webgl)
-#knit_hooks$set(rgl.static = hook_rgl)
+knit_hooks$set(webgl = hook_webgl)
+knit_hooks$set(rgl.static = hook_rgl)
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, error=FALSE, message = FALSE)
 set.seed(123)
 # ShortCUt l.95
 ```
 
-## R Markdown
+## LiDAR Processing: .las to DEM & DSM
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r, rgl.static=TRUE, cache=TRUE}
+defaultCRS<-CRS("+init=EPSG:3153")
+las_tile_ahbau = readLAS("./Data/Ahbau/Las_v12_ASPRS/093g030122ne.las", select = 'xyzr')
+las_tile_ahbau = filter_duplicates(las_tile_ahbau)
+las_tile_ahbau_csf = classify_ground(las_tile_ahbau, csf(sloop_smooth=TRUE, 0.5, 1))
+las_tile_ahbau_csf_so = classify_noise(las_tile_ahbau_csf, sor(k=10, m=3))
+las_tile_ahbau_csf_sor_norm = normalize_height(las_tile_ahbau_csf_sor, knnidw())
+# plot normalization using show stop chm
+las_tile_ahbau_chm = grid_canopy(las_tile_ahbau_csf_sor_norm, 1, dsmtin(8))
+plot(las_tile_ahbau_chm, col = height.colors(50))
+```
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## LiDAR Processing: DSM to CHM by stem detection
+
 
 ```{r cars}
 summary(cars)
