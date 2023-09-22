@@ -14,7 +14,6 @@ output:
 
 ```{r setup, echo=FALSE, message=FALSE,warning=FALSE, error=FALSE}
 library(lidR)
-library(mapview)
 library(rgl)
 library(pandocfilters)
 library(rmarkdown)
@@ -25,19 +24,14 @@ library(knitr)
 library(raster)
 library(webdriver)
 library(webshot)
-library(sf)
-library(sp)
+library(webshot2)
 library(terra)
-library(conflicted)
-library(RColorBrewer)
-library(tmap)
-library(tmaptools)
+library(matlab)
 #webshot::install_phantomjs(force = TRUE)
 knit_hooks$set(webgl = hook_webgl)
 knit_hooks$set(rgl.static = hook_rgl)
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, error=FALSE, message = FALSE)
-set.seed(123)
-# ShortCUt l.95
+set.seed(23)
 ```
 
 ## LiDAR Processing: Visualize, Classify, Clean, Visualize
