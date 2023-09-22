@@ -40,22 +40,26 @@ set.seed(123)
 # ShortCUt l.95
 ```
 
-## LiDAR Processing: .las to DEM & DSM
+## LiDAR Processing: Visualize, Classify, Clean, Visualize
 
 ```{r, rgl.static=TRUE, cache=TRUE}
-defaultCRS<-CRS("+init=EPSG:3153")
-las_tile_ahbau = readLAS("./Data/Ahbau/Las_v12_ASPRS/093g030122ne.las", select = 'xyzr')
-las_tile_ahbau = filter_duplicates(las_tile_ahbau)
-las_tile_ahbau_csf = classify_ground(las_tile_ahbau, csf(sloop_smooth=TRUE, 0.5, 1))
-las_tile_ahbau_csf_so = classify_noise(las_tile_ahbau_csf, sor(k=10, m=3))
-las_tile_ahbau_csf_sor_norm = normalize_height(las_tile_ahbau_csf_sor, knnidw())
-# plot normalization using show stop chm
-las_tile_ahbau_chm = grid_canopy(las_tile_ahbau_csf_sor_norm, 1, dsmtin(8))
-plot(las_tile_ahbau_chm, col = height.colors(50))
+#Visualize
+defaultCRS<-CRS("+init=EPSG:3857")
+las_tile = readLAS("/media/seamus/USB1/Shavington/clouda340d379a59ddadf.las", select = 'xyzcr', filter = '-drop_class 19')
+plot(las_tile, bg = "white")
+#Classify ground & noise
+las_tile_csf = classify_ground(las_tile, csf(sloop_smooth=TRUE, 0.5, 1))
+las_tile_csf_so = classify_noise(las_tile_csf, sor(k=10, m=3))
+#Clean noise
+las_tile_csf_sor_norm = normalize_height(las_tile_csf_sor, knnidw())
+las_tile_chm = grid_canopy(las_tile_csf_sor_norm, 1, dsmtin(8))
+#Clean paths
+las_tile_chm = filter_duplicates(las_tile_chm)
+plot(las_tile_chm, col = height.colors(50))
 ```
 
 
-## LiDAR Processing: DSM to CHM by stem detection
+## LiDAR Processing: Classify  ground points
 
 
 ```{r cars}
