@@ -12,6 +12,7 @@ output:
 
 
 ```{r setup, echo=FALSE, message=FALSE,warning=FALSE, error=FALSE}
+library(sf)
 library(lidR)
 library(ForestTools)
 library(rgl)
