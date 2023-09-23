@@ -3,7 +3,7 @@ title: "Ash-Dieback Stem Detection"
 author: "Vertinetik-SM"
 date: "`r Sys.Date()`"
 output: 
-  html_document:
+  github_document:
     toc: TRUE
     toc_depth: 5
     number_sections: FALSE
@@ -39,14 +39,14 @@ set.seed(23)
 ## Classify Normalise Rasterize
 
 ```{r, rgl.static=TRUE, cache=TRUE, eval=TRUE, echo=FALSE}
-las_tile_chm = readLAS("/media/seamus/USB1/Shavington/clouda340d379a59ddadf.las", select = 'xyzcr', filter = '-drop_class 19')
+las_tile_chm = raster::raster("/media/seamus/USB1/Shavington/lead_htop_raster.tif", select = 'xyzcr', filter = '-drop_class 19')
 plot(las_tile_chm)
 ```
 
 ```{r, rgl.static=TRUE, cache=TRUE, eval=FALSE, echo=TRUE}
 #Visualize
 defaultCRS<-CRS("+init=EPSG:3857")
-las_tile = readLAS("/media/seamus/USB1/Shavington/lead_htop_raster.tif", select = 'xyzcr', filter = '-drop_class 19')
+las_tile = readLAS("/media/seamus/USB1/Shavington/clouda340d379a59ddadf.las", select = 'xyzcr', filter = '-drop_class 19')
 #Classify ground & noise
 las_tile_csf = classify_ground(las_tile, csf(sloop_smooth=TRUE, 0.5, 1))
 #las_tile_csf_so = classify_noise(las_tile_csf, sor(k=10, m=3))
