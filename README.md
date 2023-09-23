@@ -1,35 +1,88 @@
-Vertinetik: Ash-Dieback Stem Detection
-================
-SM
-2023-09-16
+---
+title: "Ash-Dieback Stem Detection"
+author: "Vertinetik-SM"
+date: "`r Sys.Date()`"
+output: 
+  urlcolor: blue
+  html_document:
+    toc: TRUE
+    toc_depth: 5
+    number_sections: FALSE
+    df_print: tibble
+---
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax
-for authoring HTML, PDF, and MS Word documents. For more details on
-using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that
-includes both content as well as the output of any embedded R code
-chunks within the document. You can embed an R code chunk like this:
-
-``` r
-summary(cars)
+```{r setup, echo=FALSE, message=FALSE,warning=FALSE, error=FALSE}
+library(lidR)
+library(ForestTools)
+library(rgl)
+library(pandocfilters)
+library(rmarkdown)
+library(formatR)
+library(gitignore)
+library(tinytex)
+library(knitr)
+library(raster)
+library(webdriver)
+library(webshot)
+library(webshot2)
+library(terra)
+library(matlab)
+#webshot::install_phantomjs(force = TRUE)
+knit_hooks$set(webgl = hook_webgl)
+knit_hooks$set(rgl.static = hook_rgl)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, error=FALSE, message = FALSE)
+set.seed(23)
 ```
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+## Classify Normalise Rasterize
 
-## Including Plots
+```{r, rgl.static=TRUE, cache=TRUE, eval=FALSE, echo=TRUE}
+#Visualize
+defaultCRS<-CRS("+init=EPSG:3857")
+las_tile = readLAS("/media/seamus/USB1/Shavington/clouda340d379a59ddadf.las", select = 'xyzcr', filter = '-drop_class 19')
+#Classify ground & noise
+las_tile_csf = classify_ground(las_tile, csf(sloop_smooth=TRUE, 0.5, 1))
+#las_tile_csf_so = classify_noise(las_tile_csf, sor(k=10, m=3))
+#Clean noise
+las_tile_csf_norm = normalize_height(las_tile_csf, knnidw())
+#Clean overlaps
+#las_tile_chm_so_norm_clean = filter_duplicates(las_tile_csf_so_norm)
+#Rasterize
+las_tile_chm = grid_canopy(las_tile_csf_norm, 1, dsmtin(8))
+#plot(las_tile_chm, col = height.colors(50))
 
-You can also embed plots, for example:
+writeRaster(las_tile_chm, filename = "/media/seamus/USB1/Shavington/lead_htop_raster.tif", overwrite=TRUE)
+plot(las_tile_chm)
+```
 
-![](ash-dieback-stem-map_files/figure-gfm/pressure-1.png)<!-- -->
 
-Note that the `echo = FALSE` parameter was added to the code chunk to
-prevent printing of the R code that generated the plot.
+## Variable Window Function 
+
+```{r, echo=TRUE, eval=FALSE}
+
+kernel <- matrix(1,3,3)
+wf_plowright<-function(x){ 
+  a=0.05
+  b=0.6 
+  y<-a*x+b 
+  return(y)}
+heights <- seq(0,40,0.5)
+window_plowright <- wf_plowright(heights)
+plot(heights, window_plowright, type = "l", ylim = c(0,12), xlab="point elevation (m)", ylab="window diameter (m)", main='Plowright, 2018')
+
+las_tile_chm_smooth = focal(las_tile_chm, w = kernel, fun = median, na.rm = TRUE) 
+ttops_1.5mfloor_plowright = ForestTools::vwf(las_tile_chm_smooth, wf_plowright, 1.5)
+#ttops_1.5mfloor_plowright = ForestTools::vwf(CHM = las_tile_chm_smooth, winFun = wf_plowright, minHeight = 2)
+ttops_1.5mfloor_plowright_sp = as_Spatial(ttops_1.5mfloor_plowright)
+writeOGR(ttops_1.5mfloor_plowright_sp, "/media/seamus/USB1/Shavington", "ttops_1.5mfloor_plowright_sp", driver = "ESRI Shapefile") 
+```
+
+```{r, echo=FALSE}
+stem_count_sf = st_as_sf("/media/seamus/USB1/Shavington/ttops_1.5mfloor_plowright.shp")
+
+las_tile_chm = raster::raster("/media/seamus/USB1/Shavington/lead_htop_raster.tif")
+#stem_count_ha_sf = st_as_sf(ttops_1.5mfloor_plowright)
+plot(st_geometry(ttops_1.5mfloor_plowright["treeID"]), cex = 0.2, pch="+", col = 'red', lwd=1, alpha=1, add=TRUE) 
+plot(las_tile_chm)
+```
